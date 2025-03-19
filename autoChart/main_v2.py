@@ -231,7 +231,7 @@ def auto_trade(idx):
             target_rsi = 25
             sell_rsi = 60
             while True:
-                if idx == 3:
+                if idx < 3:
                     target_ticker = search_rsi(target_rsi)
                 else:
                     target_ticker = search_my_rsi(target_rsi)
