@@ -99,7 +99,6 @@ def search_rsi(setting_rsi):
             response = requests.request("GET", url, params=querystring)
             data = response.json()
 
-
             # 데이터가 없거나 예기치 않은 형태일 경우 예외 처리
             if not data or isinstance(data, dict):
                 continue  # 다음 심볼로 넘어가기
@@ -195,7 +194,7 @@ def auto_trade():
                         time.sleep(300)
                     else:
                         print(f"거래 조건 미충족")
-                        time.sleep(100)
+                        time.sleep(1)
                 if bp:
                     break
             except:
@@ -204,6 +203,7 @@ def auto_trade():
         print("프로세스 종료 중...")
         # 추가적인 종료 처리 로직이 있으면 여기에 작성
         exit()
+
 
 load_dotenv()
 access = os.environ["access"]  # access 키
@@ -214,7 +214,6 @@ my_balance = upbit.get_balance("KRW")
 trade_money = max(5000, my_balance * 0.1)  # 잔고의 10% 또는 최소 5000원
 print(f"현재 잔고: {my_balance}원")
 print(f"설정된 매수 금액: {trade_money}원")
-
 
 if __name__ == "__main__":
     print("TRADE START")
