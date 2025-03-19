@@ -6,6 +6,8 @@ from dotenv import load_dotenv  # pip install python-dotenv
 import os
 import requests
 import multiprocessing
+import matplotlib.pyplot as plt
+from numpy import ta
 
 
 # 보유 자산 조회
@@ -225,6 +227,7 @@ def search_my_rsi(setting_rsi):
     return None  # <-- 추가
 
 
+# 실제 트레이드 위치
 def auto_trade(idx):
     while True:
         try:

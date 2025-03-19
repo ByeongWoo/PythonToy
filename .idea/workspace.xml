@@ -4,7 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c333e199-8c32-4d49-a806-b1e7881034d6" name="변경" comment="병렬처리 시 내가 보유한 코인만 확인하는 로직도 추가">
+    <list default="true" id="c333e199-8c32-4d49-a806-b1e7881034d6" name="변경" comment="순서 실수 복구">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/autoChart/main_v2.py" beforeDir="false" afterPath="$PROJECT_DIR$/autoChart/main_v2.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -115,7 +116,7 @@
       <updated>1742360304714</updated>
       <workItem from="1742360305970" duration="4656000" />
       <workItem from="1742364996634" duration="20000" />
-      <workItem from="1742365407286" duration="6499000" />
+      <workItem from="1742365407286" duration="7464000" />
     </task>
     <task id="LOCAL-00001" summary="First Commit">
       <option name="closed" value="true" />
@@ -157,7 +158,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742371902202</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="순서 실수 복구">
+      <option name="closed" value="true" />
+      <created>1742371975150</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1742371975150</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -191,10 +200,11 @@
     <MESSAGE value="코인 자동매매 프로그램 추가" />
     <MESSAGE value="로직 일부 수정" />
     <MESSAGE value="병렬처리 시 내가 보유한 코인만 확인하는 로직도 추가" />
-    <option name="LAST_COMMIT_MESSAGE" value="병렬처리 시 내가 보유한 코인만 확인하는 로직도 추가" />
+    <MESSAGE value="순서 실수 복구" />
+    <option name="LAST_COMMIT_MESSAGE" value="순서 실수 복구" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Python$main_v2.coverage" NAME="main_v2 커버리지 결과" MODIFIED="1742363305313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/autoChart" />
-    <SUITE FILE_PATH="coverage/PythonToy$main_v2.coverage" NAME="main_v2 커버리지 결과" MODIFIED="1742371833329" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/autoChart" />
+    <SUITE FILE_PATH="coverage/PythonToy$main_v2.coverage" NAME="main_v2 커버리지 결과" MODIFIED="1742371952983" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/autoChart" />
   </component>
 </project>
