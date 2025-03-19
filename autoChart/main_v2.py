@@ -5,6 +5,38 @@ import json
 from dotenv import load_dotenv  # pip install python-dotenv
 import os
 import requests
+import multiprocessing
+
+
+# 보유 자산 조회
+def get_balances():
+    balances = upbit.get_balances()
+    tickers = []
+    for balance in balances:
+        coin = balance['currency']
+        if coin != 'KRW' and float(balance['balance']) > 0:  # KRW 제외, 보유량이 0 이상인 코인만 필터링
+            tickers.append(f"KRW-{coin}")
+    return tickers
+
+
+def clear_console():
+    if os.name == 'nt':  # Windows
+        os.system('cls')
+    else:  # MacOS / Linux
+        os.system('clear')
+
+
+# 일정 라인 수 이상이면 콘솔을 새로 고침
+def print_limited_output():
+    max_lines = 20  # 출력할 최대 라인 수
+    line_count = 0
+    while True:
+        if line_count >= max_lines:
+            clear_console()  # 일정 라인 수 이상이면 콘솔을 지움
+            line_count = 0  # 라인 카운트 초기화
+        print(f"Output line {line_count + 1}")
+        line_count += 1
+        time.sleep(0.5)
 
 
 def buy(ticker, money):
@@ -37,9 +69,10 @@ def sell(ticker):
     current_price = pyupbit.get_current_price(ticker)
     sell_volume = round(current_price * balance, 0)
     ror = round((current_price / upbit.get_avg_buy_price(ticker) - 1) * 100, 2)
-    msg = f"{ticker} 매도 완료 {sell_volume}원\n수익률: {ror}%"
     s = upbit.sell_market_order(ticker, balance)
+    msg = f"{ticker} 매도 완료 {sell_volume}원\n수익률: {ror}%"
     print(msg)
+    print(s)
 
 
 def get_rsi(target_ticker, period=14):
@@ -126,6 +159,7 @@ def search_rsi(setting_rsi):
                 continue  # 다음 심볼로 넘어가기
 
             if rsi_value < setting_rsi:
+                os.system('cls')
                 print(f"!!과매도 현상 발견!!\n" + symbol)
                 print(f"매수 시점 rsi : {rsi_value}")
                 return symbol
@@ -139,70 +173,123 @@ def search_rsi(setting_rsi):
     return None  # <-- 추가
 
 
-def auto_trade():
+def search_my_rsi(setting_rsi):
     try:
-        while True:
-            try:
-                print(f"거래 시작")
-                target_rsi = 25
-                sell_rsi = 60
-                while True:
+        top10_tickers = get_balances()
+
+        print(f"tickers : {top10_tickers}")
+        for symbol in top10_tickers:
+            url = "https://api.upbit.com/v1/candles/minutes/10"
+            querystring = {"market": symbol, "count": "200"}
+            response = requests.request("GET", url, params=querystring)
+            data = response.json()
+
+            # 데이터가 없거나 예기치 않은 형태일 경우 예외 처리
+            if not data or isinstance(data, dict):
+                continue  # 다음 심볼로 넘어가기
+
+            df = pd.DataFrame(data)
+            df = df.reindex(index=df.index[::-1]).reset_index()
+            df['close'] = df["trade_price"]
+
+            def rsi(ohlc: pd.DataFrame, period: int = 14):
+                delta = ohlc["close"].diff()
+                up, down = delta.copy(), delta.copy()
+                up[up < 0] = 0
+                down[down > 0] = 0
+                _gain = up.ewm(alpha=1 / period).mean()
+                _loss = down.abs().ewm(alpha=1 / period).mean()
+                RS = _gain / _loss
+                return pd.Series(100 - (100 / (1 + RS)), name="RSI")
+
+            # RSI 값 계산
+            rsi_value = rsi(df, 14).iloc[-1]
+
+            # RSI 값이 NaN이면 건너뜁니다.
+            if pd.isna(rsi_value):
+                print(f"Error: Invalid RSI value for {symbol}")
+                continue  # 다음 심볼로 넘어가기
+
+            if rsi_value < setting_rsi:
+                os.system('cls')
+                print(f"!!과매도 현상 발견!!\n" + symbol)
+                print(f"매수 시점 rsi : {rsi_value}")
+                return symbol
+
+            time.sleep(1)
+
+    except Exception as e:
+        print(f"Error in search_rsi: {e}")
+        time.sleep(2)
+
+    return None  # <-- 추가
+
+
+def auto_trade(idx):
+    while True:
+        try:
+            target_rsi = 25
+            sell_rsi = 60
+            while True:
+                if idx == 3:
                     target_ticker = search_rsi(target_rsi)
-                    time.sleep(1)
-                    if target_ticker:
-                        buy(target_ticker, trade_money)
-                        bought_rsi = get_rsi(target_ticker, 14).iloc[-1]
-                        tt = True
-                        break
-                    else:
-                        print(f"계속 탐색중입니다. Target RSI : {target_rsi}")
-                        target_rsi += 1
-                first_price = pyupbit.get_current_price(target_ticker)
-                print(f"First Price : {first_price} 원")
-                cnt = 1
-                bp = False
-                while tt:
-                    coin_bought = upbit.get_balance(target_ticker)
-                    total_balance = coin_bought * pyupbit.get_current_price(target_ticker)
-                    rsi_value = get_rsi(target_ticker, 14).iloc[-1]
-                    print(f"매도 rsi : {rsi_value} ")
-                    if total_balance > 1000000:
-                        print(f"매도 스킵합니다")
-                        break
-                    if coin_bought < 1:
-                        print(f'already sold')
-                        break
-                    if total_balance < trade_money * cnt * 0.95:
-                        bp = True
-                        sell(target_ticker)
-                        break
-                    if rsi_value > 60:
-                        time.sleep(600)
-                        rsi_value = get_rsi(target_ticker, 14).iloc[-1]
-                        if rsi_value < sell_rsi:
-                            sell(target_ticker)
-                            print(f'sell volume:{total_balance}')
-                            break
-                        else:
-                            sell_rsi = max(rsi_value, sell_rsi)
-                            print(f'current rsi : {rsi_value}, waiting...')
-                    elif rsi_value < min(30, bought_rsi - 2) and cnt <= 3:
-                        bought_rsi -= 2
-                        buy(target_ticker, trade_money)
-                        print(f'buy more')
-                        cnt += 1
-                        time.sleep(300)
-                    else:
-                        print(f"거래 조건 미충족")
-                        time.sleep(1)
-                if bp:
-                    break
-            except:
+                else:
+                    target_ticker = search_my_rsi(target_rsi)
+
                 time.sleep(1)
-    except KeyboardInterrupt:
-        print("프로세스 종료 중...")
-        # 추가적인 종료 처리 로직이 있으면 여기에 작성
-        exit()
+                if target_ticker:
+                    buy(target_ticker, trade_money)
+                    bought_rsi = get_rsi(target_ticker, 14).iloc[-1]
+                    tf = True
+                    break
+                else:
+                    print(f"계속 탐색중입니다. Target RSI : {target_rsi}")
+                    target_rsi += 1
+            first_price = pyupbit.get_current_price(target_ticker)
+            print(f"first price : {first_price}")
+            cnt = 1
+            bp = False
+            while tf:
+                coin_bought = upbit.get_balance(target_ticker)
+                total_balance = coin_bought * pyupbit.get_current_price(target_ticker)
+                rsi_value = get_rsi(target_ticker, 14).iloc[-1]
+                print(f"타겟 : {target_ticker} 잔고 : {total_balance} 매도 rsi : {rsi_value} ")
+                if total_balance > 1000000:
+                    print("매도 스킵")
+                    break
+                if coin_bought < 1:
+                    print('already sold')
+                    os.system('cls')
+                    break
+                if total_balance < trade_money * cnt * 0.95:
+                    bp = True
+                    sell(target_ticker)
+                    break
+                if rsi_value > 60:
+                    time.sleep(10)
+                    rsi_value = get_rsi(target_ticker, 14).iloc[-1]
+                    if rsi_value < sell_rsi:
+                        sell(target_ticker)
+                        print(f'sell volume:{total_balance}')
+                        os.system('cls')
+                        break
+                    else:
+                        sell_rsi = max(rsi_value, sell_rsi)
+                        print(f'current rsi : {rsi_value}, waiting...')
+                elif rsi_value < min(30, bought_rsi - 2) and cnt <= 3:
+                    bought_rsi -= 2
+                    buy(target_ticker, trade_money)
+                    print('buy more')
+                    cnt += 1
+                    time.sleep(10)
+                else:
+                    print("거래 조건 미충족")
+                    os.system('cls')
+                    time.sleep(10)
+            if bp:
+                break
+        except:
+            time.sleep(1)
 
 
 load_dotenv()
@@ -212,10 +299,20 @@ upbit = pyupbit.Upbit(access, secret)
 
 my_balance = upbit.get_balance("KRW")
 trade_money = max(5000, my_balance * 0.1)  # 잔고의 10% 또는 최소 5000원
+
 print(f"현재 잔고: {my_balance}원")
 print(f"설정된 매수 금액: {trade_money}원")
 
 if __name__ == "__main__":
     print("TRADE START")
-    auto_trade()
+    procs = []
+    for i in range(4):
+        p = multiprocessing.Process(target=auto_trade, args=(i, ))
+        print(f'start trading: {i} multiprocess')
+        p.start()
+        procs.append(p)
+        time.sleep(30)
+
+    for p in procs:
+        p.join()
     print("TRADE END")
