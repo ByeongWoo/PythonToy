@@ -56,7 +56,7 @@ def buy(ticker, money):
             msg = "error " + str(ticker) + " " + str(10000) + "원 매수 시도\n" + json.dumps(b, ensure_ascii=False)
     except:
         msg = str(ticker) + " " + str(money) + "원 매수 완료\n" + json.dumps(b, ensure_ascii=False)
-    print(msg)
+    print(f"{msg}")
 
 
 def sell(ticker):
